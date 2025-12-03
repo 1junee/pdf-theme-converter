@@ -161,7 +161,8 @@ const PDFThemeConverter = () => {
         const filteredData = themes[selectedTheme].filter(imageData);
         context.putImageData(filteredData, 0, 0);
 
-        pages.push(canvas.toDataURL('image/png'));
+        // JPEG 사용으로 용량 감소, 품질 0.92로 화질 유지
+        pages.push(canvas.toDataURL('image/jpeg', 0.92));
         setProgress(Math.round((pageNum / numPages) * 100));
       }
 
@@ -208,7 +209,7 @@ const PDFThemeConverter = () => {
           width = pageHeight * imgRatio;
         }
 
-        pdf.addImage(processedPages[i], 'PNG', 0, 0, width, height);
+        pdf.addImage(processedPages[i], 'JPEG', 0, 0, width, height, undefined, 'FAST');
       }
 
       pdf.save(`${pdfFile.name.replace('.pdf', '')}_${selectedTheme}.pdf`);
