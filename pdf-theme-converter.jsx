@@ -415,15 +415,53 @@ const PDFThemeConverter = () => {
             gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
             gap: '1rem'
           }}>
-            {Object.entries(themes).map(([key, theme]) => {
-              const Icon = theme.icon;
-              return (
+            {Object.entries(themes).map(([key, theme]) => (
                 <div
                   key={key}
                   className={`theme-button ${selectedTheme === key ? 'selected' : ''}`}
                   onClick={() => setSelectedTheme(key)}
                 >
-                  <Icon size={32} />
+                  {/* 미니 프리뷰 */}
+                  <div style={{
+                    width: '100%',
+                    height: '60px',
+                    background: theme.bg,
+                    borderRadius: '6px',
+                    padding: '8px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '4px',
+                    border: '1px solid rgba(255,255,255,0.1)'
+                  }}>
+                    <div style={{
+                      width: '70%',
+                      height: '6px',
+                      background: theme.text,
+                      borderRadius: '2px',
+                      opacity: 0.9
+                    }} />
+                    <div style={{
+                      width: '100%',
+                      height: '4px',
+                      background: theme.text,
+                      borderRadius: '2px',
+                      opacity: 0.6
+                    }} />
+                    <div style={{
+                      width: '85%',
+                      height: '4px',
+                      background: theme.text,
+                      borderRadius: '2px',
+                      opacity: 0.6
+                    }} />
+                    <div style={{
+                      width: '60%',
+                      height: '4px',
+                      background: theme.text,
+                      borderRadius: '2px',
+                      opacity: 0.6
+                    }} />
+                  </div>
                   <div>
                     <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>
                       {theme.name}
@@ -433,8 +471,7 @@ const PDFThemeConverter = () => {
                     </div>
                   </div>
                 </div>
-              );
-            })}
+            ))}
           </div>
         </div>
 
