@@ -4,10 +4,11 @@
   "description": "Convert academic papers and documents to eye-friendly dark mode and various themes",
   "main": "index.html",
   "scripts": {
-    "start": "npx http-server -p 3000 -o",
-    "dev": "npx http-server -p 3000 -o",
-    "build": "echo 'No build step required for static site'",
-    "deploy": "gh-pages -d ."
+    "start": "vite",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "deploy": "vite build && gh-pages -d dist"
   },
   "keywords": [
     "pdf",
@@ -30,9 +31,9 @@
     "url": "https://github.com/yourusername/pdf-theme-converter/issues"
   },
   "homepage": "https://github.com/yourusername/pdf-theme-converter#readme",
-  "dependencies": {},
   "devDependencies": {
     "gh-pages": "^6.1.0",
-    "http-server": "^14.1.1"
+    "http-server": "^14.1.1",
+    "vite": "^7.2.6"
   }
 }
