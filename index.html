@@ -3,86 +3,154 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDF Theme Converter - 논문 다크모드 변환</title>
-    <meta name="description" content="논문과 문서를 눈에 편안한 다크 모드 및 다양한 테마로 변환하세요">
-    
-    <!-- External Libraries -->
+    <title>PDF Theme Viewer - AI 해설 기능</title>
+    <meta name="description" content="논문을 다크모드로 보고, AI가 어려운 부분을 설명해드립니다">
+
+    <!-- PDF.js -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    
+
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: 'Inter', -apple-system, sans-serif;
             background: linear-gradient(135deg, #0f0f0f 0%, #1a1a2e 50%, #16213e 100%);
             color: #e0e0e0;
             min-height: 100vh;
-            padding: 2rem;
+            display: flex;
+            flex-direction: column;
         }
 
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 3rem;
-        }
-
-        .header-icon {
-            display: inline-flex;
+        /* Toolbar */
+        .toolbar {
+            background: rgba(26, 26, 46, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 0.75rem 1.5rem;
+            display: flex;
             align-items: center;
             gap: 1rem;
-            margin-bottom: 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
 
-        .header h1 {
-            font-size: 3rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #6366f1, #8b5cf6);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .header p {
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-weight: 600;
             font-size: 1.1rem;
-            color: #a0a0a0;
-            font-family: 'JetBrains Mono', monospace;
         }
 
-        .card {
-            background: rgba(26, 26, 46, 0.6);
-            backdrop-filter: blur(20px);
+        .toolbar-divider {
+            width: 1px;
+            height: 24px;
+            background: rgba(255, 255, 255, 0.2);
+            margin: 0 0.5rem;
+        }
+
+        .toolbar-section {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .icon-button {
+            background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            padding: 2rem;
-            margin-bottom: 2rem;
-            transition: all 0.3s ease;
+            border-radius: 8px;
+            padding: 0.5rem;
+            cursor: pointer;
+            color: #e0e0e0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            font-size: 1rem;
         }
 
-        .card:hover {
+        .icon-button:hover {
+            background: rgba(255, 255, 255, 0.1);
             border-color: rgba(255, 255, 255, 0.2);
-            transform: translateY(-2px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .icon-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .theme-selector {
+            display: flex;
+            gap: 0.25rem;
+        }
+
+        .theme-chip {
+            padding: 0.35rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+            color: #a0a0a0;
+            transition: all 0.2s;
+        }
+
+        .theme-chip:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .theme-chip.active {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border-color: transparent;
+            color: white;
+        }
+
+        .page-input {
+            width: 50px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            padding: 0.25rem 0.5rem;
+            color: #e0e0e0;
+            text-align: center;
+            font-size: 0.875rem;
+        }
+
+        .page-input:focus {
+            outline: none;
+            border-color: #6366f1;
+        }
+
+        /* Main Container */
+        .main-container {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        /* Upload Screen */
+        .upload-screen {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
         }
 
         .upload-zone {
             border: 2px dashed rgba(255, 255, 255, 0.2);
             border-radius: 16px;
-            padding: 3rem;
+            padding: 4rem;
             text-align: center;
             cursor: pointer;
             transition: all 0.3s ease;
             background: rgba(255, 255, 255, 0.02);
+            max-width: 500px;
+            width: 100%;
         }
 
         .upload-zone:hover {
@@ -91,211 +159,372 @@
         }
 
         .upload-icon {
-            width: 48px;
-            height: 48px;
-            margin: 0 auto 1rem;
+            font-size: 4rem;
+            margin-bottom: 1rem;
             opacity: 0.5;
         }
 
-        .theme-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 1rem;
-        }
-
-        .theme-button {
-            background: rgba(255, 255, 255, 0.05);
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            padding: 1.5rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
+        .features {
+            margin-top: 3rem;
             text-align: center;
         }
 
-        .theme-button:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: rgba(255, 255, 255, 0.3);
-            transform: scale(1.05);
+        .features h3 {
+            margin-bottom: 1rem;
+            color: #a0a0a0;
         }
 
-        .theme-button.selected {
-            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(168, 85, 247, 0.2));
-            border-color: #6366f1;
-            box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
-        }
-
-        .theme-icon {
-            width: 32px;
-            height: 32px;
-            margin: 0 auto 0.75rem;
-        }
-
-        .theme-name {
-            font-weight: 600;
-            margin-bottom: 0.25rem;
-        }
-
-        .theme-desc {
-            font-size: 0.75rem;
-            color: #808080;
-        }
-
-        .button-group {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-            margin-bottom: 2rem;
-        }
-
-        .button {
-            background: linear-gradient(135deg, #6366f1, #8b5cf6);
-            border: none;
-            border-radius: 12px;
-            padding: 1rem 2rem;
-            color: white;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 1rem;
-        }
-
-        .button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(99, 102, 241, 0.4);
-        }
-
-        .button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .button.download {
-            background: linear-gradient(135deg, #10b981, #059669);
-        }
-
-        .progress-container {
-            margin-bottom: 0.5rem;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 8px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 4px;
-            overflow: hidden;
-            margin-top: 1rem;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #6366f1, #8b5cf6);
-            transition: width 0.3s ease;
-            border-radius: 4px;
-        }
-
-        .preview-grid {
+        .feature-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 1.5rem;
-            margin-top: 2rem;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
         }
 
-        .page-preview {
-            border-radius: 8px;
-            overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            transition: transform 0.3s ease;
+        .feature-card {
+            padding: 1rem;
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
         }
 
-        .page-preview:hover {
-            transform: scale(1.05);
+        .feature-card .icon {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
         }
 
-        .page-preview img {
-            width: 100%;
-            height: auto;
+        /* PDF Viewer */
+        .pdf-viewer {
+            flex: 1;
+            overflow: auto;
+            display: flex;
+            justify-content: center;
+            padding: 2rem;
+            background: #2a2a2a;
+        }
+
+        .pdf-page-container {
+            position: relative;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            background: white;
+        }
+
+        #pdfCanvas {
             display: block;
         }
 
-        .page-label {
-            padding: 0.5rem;
-            background: rgba(0, 0, 0, 0.5);
-            text-align: center;
-            font-size: 0.875rem;
+        .text-layer {
+            position: absolute;
+            left: 0;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            overflow: hidden;
+            opacity: 0.2;
+            line-height: 1.0;
         }
 
-        .hidden {
-            display: none;
+        .text-layer > span {
+            color: transparent;
+            position: absolute;
+            white-space: pre;
+            cursor: text;
         }
+
+        .text-layer ::selection {
+            background: rgba(99, 102, 241, 0.5);
+        }
+
+        /* Explain Button */
+        .explain-button {
+            position: fixed;
+            transform: translateX(-50%) translateY(-100%);
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            cursor: pointer;
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            gap: 0.5rem;
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+        }
+
+        .explain-button:hover {
+            transform: translateX(-50%) translateY(-100%) scale(1.05);
+        }
+
+        /* Side Panel */
+        .side-panel {
+            width: 400px;
+            background: rgba(26, 26, 46, 0.98);
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .side-panel.open {
+            display: flex;
+        }
+
+        .side-panel-header {
+            padding: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .side-panel-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+
+        .selected-text-box {
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+            line-height: 1.6;
+        }
+
+        .selected-text-box strong {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #6366f1;
+        }
+
+        .explanation-box {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 1rem;
+            font-size: 0.9rem;
+            line-height: 1.8;
+            white-space: pre-wrap;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #808080;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .spinner {
+            animation: spin 1s linear infinite;
+        }
+
+        /* Settings Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal-overlay.open {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #1a1a2e;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 2rem;
+            width: 400px;
+        }
+
+        .modal-content h2 {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.875rem;
+            color: #a0a0a0;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 0.75rem;
+            color: #e0e0e0;
+            font-size: 0.9rem;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #6366f1;
+        }
+
+        .form-hint {
+            font-size: 0.75rem;
+            color: #808080;
+            margin-bottom: 1rem;
+        }
+
+        .save-button {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            border: none;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .hidden { display: none !important; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Header -->
-        <div class="header">
-            <div class="header-icon">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                    <polyline points="14 2 14 8 20 8"></polyline>
-                    <line x1="16" y1="13" x2="8" y2="13"></line>
-                    <line x1="16" y1="17" x2="8" y2="17"></line>
-                    <polyline points="10 9 9 9 8 9"></polyline>
-                </svg>
-                <h1>PDF Theme Converter</h1>
-            </div>
-            <p>논문을 눈에 편안한 테마로 변환하세요</p>
+    <!-- Toolbar -->
+    <div class="toolbar">
+        <div class="logo">
+            <span>📄</span>
+            <span>PDF Theme Viewer</span>
         </div>
 
-        <!-- Upload Section -->
-        <div class="card">
-            <input type="file" id="fileInput" accept="application/pdf" style="display: none;">
+        <div class="toolbar-divider"></div>
+
+        <input type="file" id="fileInput" accept="application/pdf" style="display: none;">
+        <button class="icon-button" id="uploadBtn" title="PDF 열기">📂</button>
+
+        <div id="pdfControls" class="hidden">
+            <div class="toolbar-divider"></div>
+
+            <div class="toolbar-section">
+                <button class="icon-button" id="prevPage">◀</button>
+                <input type="number" class="page-input" id="pageInput" value="1" min="1">
+                <span style="font-size: 0.875rem; color: #808080;">/ <span id="totalPages">0</span></span>
+                <button class="icon-button" id="nextPage">▶</button>
+            </div>
+
+            <div class="toolbar-divider"></div>
+
+            <div class="toolbar-section">
+                <button class="icon-button" id="zoomOut">➖</button>
+                <span id="zoomLevel" style="font-size: 0.875rem; min-width: 50px; text-align: center;">150%</span>
+                <button class="icon-button" id="zoomIn">➕</button>
+            </div>
+
+            <div class="toolbar-divider"></div>
+
+            <div class="theme-selector" id="themeSelector">
+                <button class="theme-chip" data-theme="light">Light</button>
+                <button class="theme-chip active" data-theme="dark">Dark</button>
+                <button class="theme-chip" data-theme="sepia">Sepia</button>
+                <button class="theme-chip" data-theme="night">Night</button>
+                <button class="theme-chip" data-theme="green">Eye Care</button>
+            </div>
+        </div>
+
+        <div style="flex: 1;"></div>
+
+        <button class="icon-button" id="settingsBtn" title="설정">⚙️</button>
+    </div>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Upload Screen -->
+        <div class="upload-screen" id="uploadScreen">
             <div class="upload-zone" id="uploadZone">
-                <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                    <polyline points="17 8 12 3 7 8"></polyline>
-                    <line x1="12" y1="3" x2="12" y2="15"></line>
-                </svg>
-                <h3 id="fileName">PDF 파일을 업로드하세요</h3>
+                <div class="upload-icon">📄</div>
+                <h2 id="fileName">PDF 파일을 업로드하세요</h2>
                 <p style="color: #808080; font-size: 0.9rem;">클릭하거나 파일을 드래그하세요</p>
             </div>
-        </div>
 
-        <!-- Theme Selection -->
-        <div class="card">
-            <h2 style="margin-bottom: 1.5rem; font-size: 1.5rem;">테마 선택</h2>
-            <div class="theme-grid" id="themeGrid">
-                <!-- Themes will be inserted here -->
+            <div class="features">
+                <h3>주요 기능</h3>
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <div class="icon">🌙</div>
+                        <p style="font-size: 0.875rem;">다크 모드</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="icon">👁️</div>
+                        <p style="font-size: 0.875rem;">눈 보호</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="icon">💬</div>
+                        <p style="font-size: 0.875rem;">AI 해설</p>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Action Buttons -->
-        <div class="button-group">
-            <button class="button" id="convertBtn" disabled>변환 시작</button>
-            <button class="button download hidden" id="downloadBtn">다운로드</button>
-        </div>
-
-        <!-- Progress -->
-        <div class="card hidden" id="progressCard">
-            <div class="progress-container">
-                <span>처리 중...</span>
-                <span id="progressText">0%</span>
-            </div>
-            <div class="progress-bar">
-                <div class="progress-fill" id="progressFill"></div>
+        <!-- PDF Viewer -->
+        <div class="pdf-viewer hidden" id="pdfViewer">
+            <div class="pdf-page-container" id="pageContainer">
+                <canvas id="pdfCanvas"></canvas>
+                <div class="text-layer" id="textLayer"></div>
             </div>
         </div>
 
-        <!-- Preview -->
-        <div class="card hidden" id="previewCard">
-            <h2 style="margin-bottom: 1.5rem; font-size: 1.5rem;" id="previewTitle">미리보기</h2>
-            <div class="preview-grid" id="previewGrid"></div>
+        <!-- Side Panel -->
+        <div class="side-panel" id="sidePanel">
+            <div class="side-panel-header">
+                <h3>💬 AI 해설</h3>
+                <button class="icon-button" id="closeSidePanel">✕</button>
+            </div>
+            <div class="side-panel-content">
+                <div class="selected-text-box">
+                    <strong>선택한 텍스트</strong>
+                    <span id="selectedTextDisplay"></span>
+                </div>
+                <div class="explanation-box" id="explanationBox">
+                    해설이 여기에 표시됩니다.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Explain Button (floating) -->
+    <button class="explain-button" id="explainBtn">💬 해설하기</button>
+
+    <!-- Settings Modal -->
+    <div class="modal-overlay" id="settingsModal">
+        <div class="modal-content">
+            <h2>Hugging Face 설정</h2>
+
+            <div class="form-group">
+                <label>HF Token</label>
+                <input type="password" class="form-input" id="hfTokenInput" placeholder="hf_xxxxxxxxxx...">
+            </div>
+
+            <div class="form-group">
+                <label>모델</label>
+                <input type="text" class="form-input" id="hfModelInput" placeholder="meta-llama/Llama-3.2-3B-Instruct">
+            </div>
+
+            <p class="form-hint">
+                토큰 발급: https://huggingface.co/settings/tokens<br>
+                Llama 모델은 Meta 승인 필요
+            </p>
+
+            <button class="save-button" id="saveSettingsBtn">저장</button>
         </div>
     </div>
 
@@ -304,270 +533,257 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
         // State
-        let pdfFile = null;
+        let pdfDoc = null;
+        let currentPage = 1;
+        let scale = 1.5;
         let selectedTheme = 'dark';
-        let processedPages = [];
+        let selectedText = '';
+        let hfToken = localStorage.getItem('hfToken') || '';
+        let hfModel = localStorage.getItem('hfModel') || 'meta-llama/Llama-3.2-3B-Instruct';
 
-        // Theme definitions
+        // Theme filters
         const themes = {
-            dark: {
-                name: 'Dark Mode',
-                icon: '🌙',
-                description: '눈에 편안한 다크 모드',
-                filter: invertColors
-            },
-            sepia: {
-                name: 'Sepia',
-                icon: '☕',
-                description: '따뜻한 세피아 톤',
-                filter: applySepiaFilter
-            },
-            night: {
-                name: 'Night Blue',
-                icon: '🌊',
-                description: '블루라이트 감소',
-                filter: applyNightFilter
-            },
-            green: {
-                name: 'Eye Care',
-                icon: '🌿',
-                description: '눈 건강 그린 모드',
-                filter: applyGreenFilter
-            },
-            contrast: {
-                name: 'High Contrast',
-                icon: '⚡',
-                description: '고대비 모드',
-                filter: applyHighContrastFilter
-            }
+            light: 'none',
+            dark: 'invert(1) hue-rotate(180deg)',
+            sepia: 'sepia(0.8) brightness(0.95)',
+            night: 'invert(1) hue-rotate(180deg) brightness(0.85) sepia(0.2)',
+            green: 'invert(1) hue-rotate(90deg) brightness(0.9)'
         };
 
-        // Filter functions
-        function invertColors(imageData) {
-            const data = imageData.data;
-            for (let i = 0; i < data.length; i += 4) {
-                data[i] = 255 - data[i];
-                data[i + 1] = 255 - data[i + 1];
-                data[i + 2] = 255 - data[i + 2];
-            }
-            return imageData;
-        }
+        // Elements
+        const fileInput = document.getElementById('fileInput');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const uploadZone = document.getElementById('uploadZone');
+        const uploadScreen = document.getElementById('uploadScreen');
+        const pdfViewer = document.getElementById('pdfViewer');
+        const pdfControls = document.getElementById('pdfControls');
+        const canvas = document.getElementById('pdfCanvas');
+        const textLayer = document.getElementById('textLayer');
+        const pageContainer = document.getElementById('pageContainer');
+        const pageInput = document.getElementById('pageInput');
+        const totalPagesSpan = document.getElementById('totalPages');
+        const zoomLevel = document.getElementById('zoomLevel');
+        const themeSelector = document.getElementById('themeSelector');
+        const explainBtn = document.getElementById('explainBtn');
+        const sidePanel = document.getElementById('sidePanel');
+        const selectedTextDisplay = document.getElementById('selectedTextDisplay');
+        const explanationBox = document.getElementById('explanationBox');
+        const settingsModal = document.getElementById('settingsModal');
+        const hfTokenInput = document.getElementById('hfTokenInput');
+        const hfModelInput = document.getElementById('hfModelInput');
 
-        function applySepiaFilter(imageData) {
-            const data = imageData.data;
-            for (let i = 0; i < data.length; i += 4) {
-                const r = data[i];
-                const g = data[i + 1];
-                const b = data[i + 2];
-                
-                data[i] = Math.min(255, (r * 0.393) + (g * 0.769) + (b * 0.189));
-                data[i + 1] = Math.min(255, (r * 0.349) + (g * 0.686) + (b * 0.168));
-                data[i + 2] = Math.min(255, (r * 0.272) + (g * 0.534) + (b * 0.131));
-            }
-            return imageData;
-        }
-
-        function applyNightFilter(imageData) {
-            const data = imageData.data;
-            for (let i = 0; i < data.length; i += 4) {
-                data[i] = 255 - data[i];
-                data[i + 1] = 255 - data[i + 1];
-                data[i + 2] = Math.max(0, (255 - data[i + 2]) * 0.6);
-            }
-            return imageData;
-        }
-
-        function applyGreenFilter(imageData) {
-            const data = imageData.data;
-            for (let i = 0; i < data.length; i += 4) {
-                const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
-                const inverted = 255 - avg;
-                
-                data[i] = inverted * 0.3;
-                data[i + 1] = inverted * 1.2;
-                data[i + 2] = inverted * 0.3;
-            }
-            return imageData;
-        }
-
-        function applyHighContrastFilter(imageData) {
-            const data = imageData.data;
-            for (let i = 0; i < data.length; i += 4) {
-                const avg = (data[i] + data[i + 1] + data[i + 2]) / 3;
-                const color = avg > 128 ? 0 : 255;
-                
-                data[i] = color;
-                data[i + 1] = color;
-                data[i + 2] = color;
-            }
-            return imageData;
-        }
-
-        // Initialize theme buttons
-        function initThemes() {
-            const themeGrid = document.getElementById('themeGrid');
-            Object.entries(themes).forEach(([key, theme]) => {
-                const button = document.createElement('div');
-                button.className = 'theme-button' + (key === selectedTheme ? ' selected' : '');
-                button.innerHTML = `
-                    <div class="theme-icon" style="font-size: 32px;">${theme.icon}</div>
-                    <div class="theme-name">${theme.name}</div>
-                    <div class="theme-desc">${theme.description}</div>
-                `;
-                button.onclick = () => selectTheme(key);
-                themeGrid.appendChild(button);
-            });
-        }
-
-        function selectTheme(theme) {
-            selectedTheme = theme;
-            document.querySelectorAll('.theme-button').forEach((btn, index) => {
-                const themeKey = Object.keys(themes)[index];
-                btn.className = 'theme-button' + (themeKey === theme ? ' selected' : '');
-            });
-        }
+        // Load settings
+        hfTokenInput.value = hfToken;
+        hfModelInput.value = hfModel;
 
         // File upload
-        const fileInput = document.getElementById('fileInput');
-        const uploadZone = document.getElementById('uploadZone');
-        const fileName = document.getElementById('fileName');
-        const convertBtn = document.getElementById('convertBtn');
-
+        uploadBtn.onclick = () => fileInput.click();
         uploadZone.onclick = () => fileInput.click();
 
-        fileInput.onchange = (e) => {
+        fileInput.onchange = async (e) => {
             const file = e.target.files[0];
             if (file && file.type === 'application/pdf') {
-                pdfFile = file;
-                fileName.textContent = file.name;
-                convertBtn.disabled = false;
-                processedPages = [];
-                document.getElementById('downloadBtn').classList.add('hidden');
-                document.getElementById('previewCard').classList.add('hidden');
-            } else {
-                alert('PDF 파일만 업로드 가능합니다.');
-            }
-        };
+                try {
+                    const arrayBuffer = await file.arrayBuffer();
+                    pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
 
-        // Process PDF
-        convertBtn.onclick = async () => {
-            if (!pdfFile) return;
+                    currentPage = 1;
+                    totalPagesSpan.textContent = pdfDoc.numPages;
+                    pageInput.max = pdfDoc.numPages;
 
-            convertBtn.disabled = true;
-            document.getElementById('progressCard').classList.remove('hidden');
-            document.getElementById('previewCard').classList.add('hidden');
-            processedPages = [];
+                    uploadScreen.classList.add('hidden');
+                    pdfViewer.classList.remove('hidden');
+                    pdfControls.classList.remove('hidden');
 
-            try {
-                const arrayBuffer = await pdfFile.arrayBuffer();
-                const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-                const numPages = pdf.numPages;
-
-                for (let pageNum = 1; pageNum <= numPages; pageNum++) {
-                    const page = await pdf.getPage(pageNum);
-                    const viewport = page.getViewport({ scale: 2 });
-                    
-                    const canvas = document.createElement('canvas');
-                    const context = canvas.getContext('2d');
-                    canvas.width = viewport.width;
-                    canvas.height = viewport.height;
-
-                    await page.render({
-                        canvasContext: context,
-                        viewport: viewport
-                    }).promise;
-
-                    const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-                    const filteredData = themes[selectedTheme].filter(imageData);
-                    context.putImageData(filteredData, 0, 0);
-
-                    processedPages.push(canvas.toDataURL('image/png'));
-                    
-                    const progress = Math.round((pageNum / numPages) * 100);
-                    document.getElementById('progressText').textContent = `${progress}%`;
-                    document.getElementById('progressFill').style.width = `${progress}%`;
+                    renderPage();
+                } catch (error) {
+                    console.error('PDF 로드 오류:', error);
+                    alert('PDF 로드 중 오류가 발생했습니다.');
                 }
-
-                showPreview();
-                document.getElementById('downloadBtn').classList.remove('hidden');
-            } catch (error) {
-                console.error('PDF 처리 중 오류:', error);
-                alert('PDF 처리 중 오류가 발생했습니다.');
-            } finally {
-                convertBtn.disabled = false;
-                document.getElementById('progressCard').classList.add('hidden');
             }
         };
 
-        // Show preview
-        function showPreview() {
-            const previewCard = document.getElementById('previewCard');
-            const previewGrid = document.getElementById('previewGrid');
-            const previewTitle = document.getElementById('previewTitle');
-            
-            previewTitle.textContent = `미리보기 (${processedPages.length} 페이지)`;
-            previewGrid.innerHTML = '';
-            
-            processedPages.forEach((page, index) => {
-                const div = document.createElement('div');
-                div.className = 'page-preview';
-                div.innerHTML = `
-                    <img src="${page}" alt="Page ${index + 1}">
-                    <div class="page-label">Page ${index + 1}</div>
-                `;
-                previewGrid.appendChild(div);
+        // Render page
+        async function renderPage() {
+            if (!pdfDoc) return;
+
+            const page = await pdfDoc.getPage(currentPage);
+            const viewport = page.getViewport({ scale });
+
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+
+            const context = canvas.getContext('2d');
+            await page.render({
+                canvasContext: context,
+                viewport: viewport
+            }).promise;
+
+            // Text layer
+            const textContent = await page.getTextContent();
+            textLayer.innerHTML = '';
+            textLayer.style.width = `${viewport.width}px`;
+            textLayer.style.height = `${viewport.height}px`;
+
+            pdfjsLib.renderTextLayer({
+                textContentSource: textContent,
+                container: textLayer,
+                viewport: viewport,
+                textDivs: []
             });
-            
-            previewCard.classList.remove('hidden');
+
+            pageInput.value = currentPage;
+            pageContainer.style.filter = themes[selectedTheme];
         }
 
-        // Download PDF
-        document.getElementById('downloadBtn').onclick = async () => {
-            if (processedPages.length === 0) return;
-
-            try {
-                const { jsPDF } = window.jspdf;
-                const pdf = new jsPDF({
-                    orientation: 'portrait',
-                    unit: 'px',
-                    format: 'a4'
-                });
-
-                for (let i = 0; i < processedPages.length; i++) {
-                    if (i > 0) pdf.addPage();
-                    
-                    const img = new Image();
-                    img.src = processedPages[i];
-                    await new Promise((resolve) => {
-                        img.onload = resolve;
-                    });
-
-                    const pageWidth = pdf.internal.pageSize.getWidth();
-                    const pageHeight = pdf.internal.pageSize.getHeight();
-                    const imgRatio = img.width / img.height;
-                    const pageRatio = pageWidth / pageHeight;
-
-                    let width, height;
-                    if (imgRatio > pageRatio) {
-                        width = pageWidth;
-                        height = pageWidth / imgRatio;
-                    } else {
-                        height = pageHeight;
-                        width = pageHeight * imgRatio;
-                    }
-
-                    pdf.addImage(processedPages[i], 'PNG', 0, 0, width, height);
-                }
-
-                pdf.save(`${pdfFile.name.replace('.pdf', '')}_${selectedTheme}.pdf`);
-            } catch (error) {
-                console.error('PDF 다운로드 중 오류:', error);
-                alert('PDF 다운로드 중 오류가 발생했습니다.');
+        // Page navigation
+        document.getElementById('prevPage').onclick = () => {
+            if (currentPage > 1) {
+                currentPage--;
+                renderPage();
             }
         };
 
-        // Initialize
-        initThemes();
+        document.getElementById('nextPage').onclick = () => {
+            if (currentPage < pdfDoc.numPages) {
+                currentPage++;
+                renderPage();
+            }
+        };
+
+        pageInput.onchange = () => {
+            const page = parseInt(pageInput.value);
+            if (page >= 1 && page <= pdfDoc.numPages) {
+                currentPage = page;
+                renderPage();
+            }
+        };
+
+        // Zoom
+        document.getElementById('zoomOut').onclick = () => {
+            if (scale > 0.5) {
+                scale -= 0.25;
+                zoomLevel.textContent = `${Math.round(scale * 100)}%`;
+                renderPage();
+            }
+        };
+
+        document.getElementById('zoomIn').onclick = () => {
+            if (scale < 3) {
+                scale += 0.25;
+                zoomLevel.textContent = `${Math.round(scale * 100)}%`;
+                renderPage();
+            }
+        };
+
+        // Theme selection
+        themeSelector.onclick = (e) => {
+            if (e.target.classList.contains('theme-chip')) {
+                selectedTheme = e.target.dataset.theme;
+                document.querySelectorAll('.theme-chip').forEach(chip => {
+                    chip.classList.toggle('active', chip.dataset.theme === selectedTheme);
+                });
+                pageContainer.style.filter = themes[selectedTheme];
+            }
+        };
+
+        // Text selection
+        pdfViewer.onmouseup = () => {
+            const selection = window.getSelection();
+            const text = selection.toString().trim();
+
+            if (text.length > 0) {
+                selectedText = text;
+                const range = selection.getRangeAt(0);
+                const rect = range.getBoundingClientRect();
+
+                explainBtn.style.left = `${rect.left + rect.width / 2}px`;
+                explainBtn.style.top = `${rect.top - 10}px`;
+                explainBtn.style.display = 'flex';
+            } else {
+                explainBtn.style.display = 'none';
+            }
+        };
+
+        // Explain button
+        explainBtn.onclick = async () => {
+            if (!selectedText) return;
+
+            if (!hfToken) {
+                settingsModal.classList.add('open');
+                alert('Hugging Face 토큰을 설정해주세요.');
+                return;
+            }
+
+            explainBtn.style.display = 'none';
+            sidePanel.classList.add('open');
+            selectedTextDisplay.textContent = selectedText;
+            explanationBox.innerHTML = '<div class="loading"><span class="spinner">⏳</span> 해설 생성 중...</div>';
+
+            try {
+                const response = await fetch(`https://api-inference.huggingface.co/models/${hfModel}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${hfToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        inputs: `<|begin_of_text|><|start_header_id|>system<|end_header_id|>
+You are a helpful assistant that explains academic text in Korean. Explain clearly and simply.<|eot_id|><|start_header_id|>user<|end_header_id|>
+다음 텍스트를 한국어로 쉽게 설명해주세요. 학술 논문의 일부일 수 있으니 전문 용어도 풀어서 설명해주세요.
+
+"${selectedText}"<|eot_id|><|start_header_id|>assistant<|end_header_id|>`,
+                        parameters: {
+                            max_new_tokens: 1024,
+                            temperature: 0.7,
+                            return_full_text: false
+                        }
+                    })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                if (Array.isArray(data) && data[0]?.generated_text) {
+                    explanationBox.textContent = data[0].generated_text;
+                } else if (data.generated_text) {
+                    explanationBox.textContent = data.generated_text;
+                } else {
+                    explanationBox.textContent = JSON.stringify(data, null, 2);
+                }
+            } catch (error) {
+                console.error('HF API 오류:', error);
+                explanationBox.textContent = `Hugging Face API 오류: ${error.message}\n\n해결 방법:\n1. 설정에서 HF 토큰 확인\n2. 토큰 발급: https://huggingface.co/settings/tokens\n3. 모델 접근 권한 확인 (Llama는 승인 필요)`;
+            }
+        };
+
+        // Close side panel
+        document.getElementById('closeSidePanel').onclick = () => {
+            sidePanel.classList.remove('open');
+        };
+
+        // Settings
+        document.getElementById('settingsBtn').onclick = () => {
+            settingsModal.classList.add('open');
+        };
+
+        settingsModal.onclick = (e) => {
+            if (e.target === settingsModal) {
+                settingsModal.classList.remove('open');
+            }
+        };
+
+        document.getElementById('saveSettingsBtn').onclick = () => {
+            hfToken = hfTokenInput.value;
+            hfModel = hfModelInput.value;
+            localStorage.setItem('hfToken', hfToken);
+            localStorage.setItem('hfModel', hfModel);
+            settingsModal.classList.remove('open');
+        };
     </script>
 </body>
 </html>
