@@ -7,6 +7,7 @@ const PDFThemeConverter = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isLoadingPreview, setIsLoadingPreview] = useState(false);
   const [originalPages, setOriginalPages] = useState([]);
+  const [themePreviews, setThemePreviews] = useState({});
   const [processedPages, setProcessedPages] = useState([]);
   const [progress, setProgress] = useState(0);
   const fileInputRef = useRef(null);
@@ -121,9 +122,10 @@ const PDFThemeConverter = () => {
       setPdfFile(file);
       setProcessedPages([]);
       setOriginalPages([]);
+      setThemePreviews({});
       setProgress(0);
 
-      // 원본 미리보기 로드
+      // 원본 미리보기 및 테마별 미리보기 로드
       setIsLoadingPreview(true);
       try {
         const pdfjsLib = window['pdfjs-dist/build/pdf'];
@@ -134,7 +136,7 @@ const PDFThemeConverter = () => {
 
         // 첫 페이지만 미리보기
         const page = await pdf.getPage(1);
-        const viewport = page.getViewport({ scale: 1.5 });
+        const viewport = page.getViewport({ scale: 1 });
 
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
@@ -147,6 +149,23 @@ const PDFThemeConverter = () => {
         }).promise;
 
         setOriginalPages([canvas.toDataURL('image/jpeg', 0.85)]);
+
+        // 각 테마별 미리보기 생성
+        const previews = {};
+        for (const [key, theme] of Object.entries(themes)) {
+          const previewCanvas = document.createElement('canvas');
+          const previewContext = previewCanvas.getContext('2d');
+          previewCanvas.width = canvas.width;
+          previewCanvas.height = canvas.height;
+          previewContext.drawImage(canvas, 0, 0);
+
+          const imageData = previewContext.getImageData(0, 0, previewCanvas.width, previewCanvas.height);
+          const filteredData = theme.filter(imageData);
+          previewContext.putImageData(filteredData, 0, 0);
+
+          previews[key] = previewCanvas.toDataURL('image/jpeg', 0.7);
+        }
+        setThemePreviews(previews);
       } catch (error) {
         console.error('미리보기 로드 중 오류:', error);
       } finally {
@@ -490,47 +509,38 @@ const PDFThemeConverter = () => {
                   className={`theme-button ${selectedTheme === key ? 'selected' : ''}`}
                   onClick={() => setSelectedTheme(key)}
                 >
-                  {/* 미니 프리뷰 */}
-                  <div style={{
-                    width: '100%',
-                    height: '60px',
-                    background: theme.bg,
-                    borderRadius: '6px',
-                    padding: '8px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '4px',
-                    border: '1px solid rgba(255,255,255,0.1)'
-                  }}>
-                    <div style={{
-                      width: '70%',
-                      height: '6px',
-                      background: theme.text,
-                      borderRadius: '2px',
-                      opacity: 0.9
-                    }} />
+                  {/* 테마 미리보기 */}
+                  {themePreviews[key] ? (
+                    <img
+                      src={themePreviews[key]}
+                      alt={`${theme.name} preview`}
+                      style={{
+                        width: '100%',
+                        height: '80px',
+                        objectFit: 'cover',
+                        objectPosition: 'top',
+                        borderRadius: '6px',
+                        border: '1px solid rgba(255,255,255,0.1)'
+                      }}
+                    />
+                  ) : (
                     <div style={{
                       width: '100%',
-                      height: '4px',
-                      background: theme.text,
-                      borderRadius: '2px',
-                      opacity: 0.6
-                    }} />
-                    <div style={{
-                      width: '85%',
-                      height: '4px',
-                      background: theme.text,
-                      borderRadius: '2px',
-                      opacity: 0.6
-                    }} />
-                    <div style={{
-                      width: '60%',
-                      height: '4px',
-                      background: theme.text,
-                      borderRadius: '2px',
-                      opacity: 0.6
-                    }} />
-                  </div>
+                      height: '80px',
+                      background: theme.bg,
+                      borderRadius: '6px',
+                      padding: '10px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '5px',
+                      border: '1px solid rgba(255,255,255,0.1)'
+                    }}>
+                      <div style={{ width: '70%', height: '8px', background: theme.text, borderRadius: '2px', opacity: 0.9 }} />
+                      <div style={{ width: '100%', height: '5px', background: theme.text, borderRadius: '2px', opacity: 0.6 }} />
+                      <div style={{ width: '85%', height: '5px', background: theme.text, borderRadius: '2px', opacity: 0.6 }} />
+                      <div style={{ width: '60%', height: '5px', background: theme.text, borderRadius: '2px', opacity: 0.6 }} />
+                    </div>
+                  )}
                   <div>
                     <div style={{ fontWeight: '600', marginBottom: '0.25rem' }}>
                       {theme.name}
