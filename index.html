@@ -24,6 +24,7 @@
         }
 
         /* Toolbar */
+
         .toolbar {
             background: rgba(26, 26, 46, 0.95);
             backdrop-filter: blur(20px);
@@ -125,6 +126,7 @@
         }
 
         /* Main Container */
+
         .main-container {
             flex: 1;
             display: flex;
@@ -132,6 +134,7 @@
         }
 
         /* Upload Screen */
+
         .upload-screen {
             flex: 1;
             display: flex;
@@ -192,6 +195,7 @@
         }
 
         /* PDF Viewer */
+
         .pdf-viewer {
             flex: 1;
             overflow: auto;
@@ -234,6 +238,7 @@
         }
 
         /* Explain Button */
+
         .explain-button {
             position: fixed;
             transform: translateX(-50%) translateY(-100%);
@@ -256,6 +261,7 @@
         }
 
         /* Side Panel */
+
         .side-panel {
             width: 400px;
             background: rgba(26, 26, 46, 0.98);
@@ -324,6 +330,7 @@
         }
 
         /* Settings Modal */
+
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -398,6 +405,7 @@
 
         .hidden { display: none !important; }
     </style>
+  <script type="module" crossorigin src="/pdf-theme-converter/assets/index-C1QKrLsD.js"></script>
 </head>
 <body>
     <!-- Toolbar -->
@@ -528,262 +536,5 @@
         </div>
     </div>
 
-    <script>
-        // Initialize PDF.js
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-
-        // State
-        let pdfDoc = null;
-        let currentPage = 1;
-        let scale = 1.5;
-        let selectedTheme = 'dark';
-        let selectedText = '';
-        let hfToken = localStorage.getItem('hfToken') || '';
-        let hfModel = localStorage.getItem('hfModel') || 'meta-llama/Llama-3.2-3B-Instruct';
-
-        // Theme filters
-        const themes = {
-            light: 'none',
-            dark: 'invert(1) hue-rotate(180deg)',
-            sepia: 'sepia(0.8) brightness(0.95)',
-            night: 'invert(1) hue-rotate(180deg) brightness(0.85) sepia(0.2)',
-            green: 'invert(1) hue-rotate(90deg) brightness(0.9)'
-        };
-
-        // Elements
-        const fileInput = document.getElementById('fileInput');
-        const uploadBtn = document.getElementById('uploadBtn');
-        const uploadZone = document.getElementById('uploadZone');
-        const uploadScreen = document.getElementById('uploadScreen');
-        const pdfViewer = document.getElementById('pdfViewer');
-        const pdfControls = document.getElementById('pdfControls');
-        const canvas = document.getElementById('pdfCanvas');
-        const textLayer = document.getElementById('textLayer');
-        const pageContainer = document.getElementById('pageContainer');
-        const pageInput = document.getElementById('pageInput');
-        const totalPagesSpan = document.getElementById('totalPages');
-        const zoomLevel = document.getElementById('zoomLevel');
-        const themeSelector = document.getElementById('themeSelector');
-        const explainBtn = document.getElementById('explainBtn');
-        const sidePanel = document.getElementById('sidePanel');
-        const selectedTextDisplay = document.getElementById('selectedTextDisplay');
-        const explanationBox = document.getElementById('explanationBox');
-        const settingsModal = document.getElementById('settingsModal');
-        const hfTokenInput = document.getElementById('hfTokenInput');
-        const hfModelInput = document.getElementById('hfModelInput');
-
-        // Load settings
-        hfTokenInput.value = hfToken;
-        hfModelInput.value = hfModel;
-
-        // File upload
-        uploadBtn.onclick = () => fileInput.click();
-        uploadZone.onclick = () => fileInput.click();
-
-        fileInput.onchange = async (e) => {
-            const file = e.target.files[0];
-            if (file && file.type === 'application/pdf') {
-                try {
-                    const arrayBuffer = await file.arrayBuffer();
-                    pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-
-                    currentPage = 1;
-                    totalPagesSpan.textContent = pdfDoc.numPages;
-                    pageInput.max = pdfDoc.numPages;
-
-                    uploadScreen.classList.add('hidden');
-                    pdfViewer.classList.remove('hidden');
-                    pdfControls.classList.remove('hidden');
-
-                    renderPage();
-                } catch (error) {
-                    console.error('PDF 로드 오류:', error);
-                    alert('PDF 로드 중 오류가 발생했습니다.');
-                }
-            }
-        };
-
-        // Render page
-        async function renderPage() {
-            if (!pdfDoc) return;
-
-            const page = await pdfDoc.getPage(currentPage);
-            const viewport = page.getViewport({ scale });
-
-            canvas.width = viewport.width;
-            canvas.height = viewport.height;
-
-            const context = canvas.getContext('2d');
-            await page.render({
-                canvasContext: context,
-                viewport: viewport
-            }).promise;
-
-            // Text layer
-            const textContent = await page.getTextContent();
-            textLayer.innerHTML = '';
-            textLayer.style.width = `${viewport.width}px`;
-            textLayer.style.height = `${viewport.height}px`;
-
-            pdfjsLib.renderTextLayer({
-                textContentSource: textContent,
-                container: textLayer,
-                viewport: viewport,
-                textDivs: []
-            });
-
-            pageInput.value = currentPage;
-            pageContainer.style.filter = themes[selectedTheme];
-        }
-
-        // Page navigation
-        document.getElementById('prevPage').onclick = () => {
-            if (currentPage > 1) {
-                currentPage--;
-                renderPage();
-            }
-        };
-
-        document.getElementById('nextPage').onclick = () => {
-            if (currentPage < pdfDoc.numPages) {
-                currentPage++;
-                renderPage();
-            }
-        };
-
-        pageInput.onchange = () => {
-            const page = parseInt(pageInput.value);
-            if (page >= 1 && page <= pdfDoc.numPages) {
-                currentPage = page;
-                renderPage();
-            }
-        };
-
-        // Zoom
-        document.getElementById('zoomOut').onclick = () => {
-            if (scale > 0.5) {
-                scale -= 0.25;
-                zoomLevel.textContent = `${Math.round(scale * 100)}%`;
-                renderPage();
-            }
-        };
-
-        document.getElementById('zoomIn').onclick = () => {
-            if (scale < 3) {
-                scale += 0.25;
-                zoomLevel.textContent = `${Math.round(scale * 100)}%`;
-                renderPage();
-            }
-        };
-
-        // Theme selection
-        themeSelector.onclick = (e) => {
-            if (e.target.classList.contains('theme-chip')) {
-                selectedTheme = e.target.dataset.theme;
-                document.querySelectorAll('.theme-chip').forEach(chip => {
-                    chip.classList.toggle('active', chip.dataset.theme === selectedTheme);
-                });
-                pageContainer.style.filter = themes[selectedTheme];
-            }
-        };
-
-        // Text selection
-        pdfViewer.onmouseup = () => {
-            const selection = window.getSelection();
-            const text = selection.toString().trim();
-
-            if (text.length > 0) {
-                selectedText = text;
-                const range = selection.getRangeAt(0);
-                const rect = range.getBoundingClientRect();
-
-                explainBtn.style.left = `${rect.left + rect.width / 2}px`;
-                explainBtn.style.top = `${rect.top - 10}px`;
-                explainBtn.style.display = 'flex';
-            } else {
-                explainBtn.style.display = 'none';
-            }
-        };
-
-        // Explain button
-        explainBtn.onclick = async () => {
-            if (!selectedText) return;
-
-            if (!hfToken) {
-                settingsModal.classList.add('open');
-                alert('Hugging Face 토큰을 설정해주세요.');
-                return;
-            }
-
-            explainBtn.style.display = 'none';
-            sidePanel.classList.add('open');
-            selectedTextDisplay.textContent = selectedText;
-            explanationBox.innerHTML = '<div class="loading"><span class="spinner">⏳</span> 해설 생성 중...</div>';
-
-            try {
-                const response = await fetch(`https://api-inference.huggingface.co/models/${hfModel}`, {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${hfToken}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        inputs: `<|begin_of_text|><|start_header_id|>system<|end_header_id|>
-You are a helpful assistant that explains academic text in Korean. Explain clearly and simply.<|eot_id|><|start_header_id|>user<|end_header_id|>
-다음 텍스트를 한국어로 쉽게 설명해주세요. 학술 논문의 일부일 수 있으니 전문 용어도 풀어서 설명해주세요.
-
-"${selectedText}"<|eot_id|><|start_header_id|>assistant<|end_header_id|>`,
-                        parameters: {
-                            max_new_tokens: 1024,
-                            temperature: 0.7,
-                            return_full_text: false
-                        }
-                    })
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || `HTTP ${response.status}`);
-                }
-
-                const data = await response.json();
-
-                if (Array.isArray(data) && data[0]?.generated_text) {
-                    explanationBox.textContent = data[0].generated_text;
-                } else if (data.generated_text) {
-                    explanationBox.textContent = data.generated_text;
-                } else {
-                    explanationBox.textContent = JSON.stringify(data, null, 2);
-                }
-            } catch (error) {
-                console.error('HF API 오류:', error);
-                explanationBox.textContent = `Hugging Face API 오류: ${error.message}\n\n해결 방법:\n1. 설정에서 HF 토큰 확인\n2. 토큰 발급: https://huggingface.co/settings/tokens\n3. 모델 접근 권한 확인 (Llama는 승인 필요)`;
-            }
-        };
-
-        // Close side panel
-        document.getElementById('closeSidePanel').onclick = () => {
-            sidePanel.classList.remove('open');
-        };
-
-        // Settings
-        document.getElementById('settingsBtn').onclick = () => {
-            settingsModal.classList.add('open');
-        };
-
-        settingsModal.onclick = (e) => {
-            if (e.target === settingsModal) {
-                settingsModal.classList.remove('open');
-            }
-        };
-
-        document.getElementById('saveSettingsBtn').onclick = () => {
-            hfToken = hfTokenInput.value;
-            hfModel = hfModelInput.value;
-            localStorage.setItem('hfToken', hfToken);
-            localStorage.setItem('hfModel', hfModel);
-            settingsModal.classList.remove('open');
-        };
-    </script>
 </body>
 </html>
