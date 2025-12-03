@@ -5,10 +5,11 @@ const PDFThemeConverter = () => {
   const [pdfFile, setPdfFile] = useState(null);
   const [selectedTheme, setSelectedTheme] = useState('dark');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isLoadingPreview, setIsLoadingPreview] = useState(false);
+  const [originalPages, setOriginalPages] = useState([]);
   const [processedPages, setProcessedPages] = useState([]);
   const [progress, setProgress] = useState(0);
   const fileInputRef = useRef(null);
-  const canvasRef = useRef(null);
 
   const themes = {
     dark: {
@@ -114,12 +115,43 @@ const PDFThemeConverter = () => {
     return imageData;
   };
 
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (file && file.type === 'application/pdf') {
       setPdfFile(file);
       setProcessedPages([]);
+      setOriginalPages([]);
       setProgress(0);
+
+      // 원본 미리보기 로드
+      setIsLoadingPreview(true);
+      try {
+        const pdfjsLib = window['pdfjs-dist/build/pdf'];
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+        // 첫 페이지만 미리보기
+        const page = await pdf.getPage(1);
+        const viewport = page.getViewport({ scale: 1.5 });
+
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+
+        await page.render({
+          canvasContext: context,
+          viewport: viewport
+        }).promise;
+
+        setOriginalPages([canvas.toDataURL('image/jpeg', 0.85)]);
+      } catch (error) {
+        console.error('미리보기 로드 중 오류:', error);
+      } finally {
+        setIsLoadingPreview(false);
+      }
     } else {
       alert('PDF 파일만 업로드 가능합니다.');
     }
@@ -393,17 +425,54 @@ const PDFThemeConverter = () => {
             style={{ display: 'none' }}
           />
           
-          <div 
-            className="upload-zone"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <Upload size={48} style={{ margin: '0 auto 1rem', opacity: 0.5 }} />
-            <h3 style={{ marginBottom: '0.5rem' }}>
-              {pdfFile ? pdfFile.name : 'PDF 파일을 업로드하세요'}
-            </h3>
-            <p style={{ color: '#808080', fontSize: '0.9rem' }}>
-              클릭하거나 파일을 드래그하세요
-            </p>
+          <div style={{ display: 'flex', gap: '2rem', alignItems: 'flex-start' }}>
+            <div
+              className="upload-zone"
+              onClick={() => fileInputRef.current?.click()}
+              style={{ flex: originalPages.length > 0 ? '0 0 300px' : '1' }}
+            >
+              <Upload size={48} style={{ margin: '0 auto 1rem', opacity: 0.5 }} />
+              <h3 style={{ marginBottom: '0.5rem' }}>
+                {pdfFile ? pdfFile.name : 'PDF 파일을 업로드하세요'}
+              </h3>
+              <p style={{ color: '#808080', fontSize: '0.9rem' }}>
+                클릭하거나 파일을 드래그하세요
+              </p>
+            </div>
+
+            {/* 원본 첫 페이지 미리보기 */}
+            {isLoadingPreview && (
+              <div style={{
+                flex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#808080'
+              }}>
+                미리보기 로딩 중...
+              </div>
+            )}
+            {originalPages.length > 0 && !isLoadingPreview && (
+              <div style={{ flex: 1 }}>
+                <div style={{
+                  fontSize: '0.875rem',
+                  color: '#a0a0a0',
+                  marginBottom: '0.5rem'
+                }}>
+                  원본 미리보기 (첫 페이지)
+                </div>
+                <img
+                  src={originalPages[0]}
+                  alt="PDF Preview"
+                  style={{
+                    maxWidth: '100%',
+                    maxHeight: '300px',
+                    borderRadius: '8px',
+                    boxShadow: '0 10px 30px rgba(0, 0, 0, 0.3)'
+                  }}
+                />
+              </div>
+            )}
           </div>
         </div>
 
