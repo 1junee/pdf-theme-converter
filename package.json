@@ -1,0 +1,38 @@
+{
+  "name": "pdf-theme-converter",
+  "version": "1.0.0",
+  "description": "Convert academic papers and documents to eye-friendly dark mode and various themes",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx http-server -p 3000 -o",
+    "dev": "npx http-server -p 3000 -o",
+    "build": "echo 'No build step required for static site'",
+    "deploy": "gh-pages -d ."
+  },
+  "keywords": [
+    "pdf",
+    "dark-mode",
+    "theme",
+    "converter",
+    "academic",
+    "paper",
+    "eye-care",
+    "sepia",
+    "blue-light-filter"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/pdf-theme-converter.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/pdf-theme-converter/issues"
+  },
+  "homepage": "https://github.com/yourusername/pdf-theme-converter#readme",
+  "dependencies": {},
+  "devDependencies": {
+    "gh-pages": "^6.1.0",
+    "http-server": "^14.1.1"
+  }
+}
